@@ -15,7 +15,8 @@
 
         <div class="row justify-content-center">
             <div class="col-lg-7 col-md-12 p-0 logo">
-                <div class="text-center text-black" style="background-image: linear-gradient(to left, #006847, white, #CE1125);">
+                <div class="text-center text-black"
+                    style="background-image: linear-gradient(to left, #006847, white, #CE1125);">
                     <h1 class="fs-1 fw-bolder pt-1">QUINIELAS MEXICO</h1>
                     <span class="m-0 p-2 fs-4 text-uppercase">LIGA MX JORNADA 2</span>
                     <div style="position:absolute; right: 0px; top: 5px;">
@@ -168,7 +169,8 @@
                         </td>
                     </tr>
                 </table>
-                <div class="text-right fw-bold text-black p-2 text-uppercase" style="background-image: linear-gradient(to left, #006847, white, #CE1125);">
+                <div class="text-right fw-bold text-black p-2 text-uppercase"
+                    style="background-image: linear-gradient(to left, #006847, white, #CE1125);">
                     PRECIO: <span style="color:yellow;">$10.00</span>
                     <span style="float:right;">
                         <span class="text-danger">Cierre: </span>
@@ -282,66 +284,150 @@
             };
 
             function sendAll() {
-                var quinielaNombre = document.getElementById('quinielaNombre');
-                if (quinielaNombre.value === '') {
-                    alert('La Quiniela no tiene nombre');
+                var quinielaNombre = document.getElementById("quinielaNombre");
+                if (quinielaNombre.value === "") {
+                    alert("La quiniela no tiene nombre");
                     quinielaNombre.focus();
                     return;
                 }
-                var cs = currentScore.map(e => e.filter(x => x !== null).join(''));
-                var count = cs.filter(e => e !== '').length;
+                var cs = currentScore.map((e) => e.filter((x) => x !== null).join(""));
+                var count = cs.filter((e) => e !== "").length;
                 var c2 = gState.usuarioQuinielas.length;
                 var totalPartidos = currentScore.length;
                 if (count == 0) {
                     if (c2 === 0) {
-                        alert('Quiniela incompleta');
+                        alert("Quiniela incompleta");
                         return;
                     }
                 } else {
                     if (count < totalPartidos) {
-                        alert('Quiniela incompleta');
+                        alert("Quiniela incompleta");
                         return;
                     }
                 }
-                var total = document.getElementById('totalPrice').innerText;
-                var numeroTelefono = document.getElementById('numeroTelefono').innerText;
+                var total = document.getElementById("totalPrice").innerText;
+                var numeroTelefono = document.getElementById("numeroTelefono").innerText;
 
-                //if (total < 20) {
-                  //  alert('El precio minimo total debe ser de $20.00 pesos.');
-                    //return;
-                //}
+                if (total < 20) {
+                    alert("El precio total debe ser de $20.00 pesos.");
+                    return;
+                }
 
                 sellRequest.resultados = [];
 
                 var msg = `El total a pagar sera de \$${total}, desea continuar?`;
                 if (confirm(msg)) {
-                    var marcador = '';
-                    if (cs.filter(e => e !== '').length > 0) {
-                        marcador = cs.join('%20%20') + '%20%20' + quinielaNombre.value + '%0A';
+                    var marcador = "";
+                    if (cs.filter((e) => e !== "").length > 0) {
+                        marcador = cs.join("%20%20") + "%20%20" + quinielaNombre.value + "%0A";
                         sellRequest.resultados.push({
                             marcador: cs,
-                            name: quinielaNombre.value
+                            name: quinielaNombre.value,
                         });
                     }
+
+                    for (var i = 0; i < gState.usuarioQuinielas.length; i++) {
+                        marcador = gState.usuarioQuinielas[i].marcador.join(" ");
+                        var nombre = document.getElementById("pool_" + i).dataset.name;
+                        marcador += "";
+                        var palabras = marcador.split(" ");
+
+                        console.log("nombre: " + nombre);
+                        console.log(palabras);
+                        console.log("marcador: " + marcador);
+
+                        const DobleOrTriple = tieneMasDeDosCaracteres(palabras);
+
+                        //console.log("es: " + DobleOrTriple)
+
+                        if (DobleOrTriple) {
+                            console.log("tiene dobles y triples");
+
+                            /*generar un id conjunto para el pool quiniela que tenga doble y triple*/
+                            var timeDate = setConfigurationTimeDate();
+
+                            const IdConjunto = timeDate.timestamp;
+                            const IdExtra = generarShortUUID();
+                            console.log("Este es el id conjunto " + IdConjunto);
+                            /*  */
+
+                            const quinielas = generateSubArrays(palabras);
+                            console.log(quinielas);
+
+                            const arraysIndividuales = [];
+
+                            for (let i = 0; i < quinielas.length; i++) {
+                                const subArray = quinielas[i];
+                                const nombreArray = "array " + (i + 1);
+                                arraysIndividuales[nombreArray] = subArray;
+                            }
+
+                            for (const nombreArray in arraysIndividuales) {
+                                if (arraysIndividuales.hasOwnProperty(nombreArray)) {
+                                    console.log(nombreArray + " =", arraysIndividuales[nombreArray]);
+
+                                    const firebaseConfig = setConfigurationFirebase();
+
+                                    if (!firebase.apps.length) {
+                                        firebase.initializeApp(firebaseConfig);
+                                    }
+
+                                    var timeDate = setConfigurationTimeDate();
+                                    const uuid = generarUUID();
+
+                                    console.log("este es uuid: " + uuid);
+
+                                    firebase
+                                        .database()
+                                        .ref("quinielas1/" + timeDate.timestamp + "-" + uuid)
+                                        .set({
+                                            marcador: arraysIndividuales[nombreArray],
+                                            nombre: nombre,
+                                            fecha: timeDate.registerTimeDate,
+                                            status: false,
+                                            isEspecial: true,
+                                            IdConjunto: IdConjunto + "" + IdExtra,
+                                        });
+                                }
+                            }
+                        } else {
+                            console.log("es una quiniela simple");
+
+                            const firebaseConfig = setConfigurationFirebase();
+
+                            if (!firebase.apps.length) {
+                                firebase.initializeApp(firebaseConfig);
+                            }
+
+                            var timeDate = setConfigurationTimeDate();
+                            const uuid = generarUUID();
+
+                            firebase
+                                .database()
+                                .ref("quinielas1/" + timeDate.timestamp + "-" + uuid)
+                                .set({
+                                    marcador: palabras,
+                                    nombre: nombre,
+                                    fecha: timeDate.registerTimeDate,
+                                    status: false,
+                                    isEspecial: false,
+                                    IdConjunto: "",
+                                });
+                        }
+                    }
+
                     for (var i = 0; i < gState.usuarioQuinielas.length; i++) {
                         sellRequest.resultados.push(gState.usuarioQuinielas[i]);
-                        marcador += gState.usuarioQuinielas[i].marcador.join('%20%20');
-                        var nombre = document.getElementById('pool_' + i).dataset.name;
-                        marcador += '%20%20' + nombre;
-                        marcador += '%0A';
+                        marcador += gState.usuarioQuinielas[i].marcador.join("%20%20");
+                        var nombre = document.getElementById("pool_" + i).dataset.name;
+                        marcador += "%20%20" + nombre;
+                        marcador += "%0A";
                     }
-                        marcador += "TOTAL A PAGAR $" + total;
-                    window.open(`https://wa.me/${numeroTelefono}?text=${marcador}`, '_blank');
-                    //fetch('/Sells/save', {
-                    //  method: 'POST',
-                    //  headers: {
-                    //    'Content-Type': 'application/json',
-                    //  },
-                    //  body: JSON.stringify(sellRequest),
-                    //})
-                    //.then((res) => {
-                    //  window.open(`https://wa.me/${numeroTelefono}?text=${marcador}`,'_blank');
-                    //})
+
+                    window.open(
+                        `https://wa.me/${numeroTelefono}?text=${marcador}Total a pagar:$${total}`,
+                        "_blank"
+                    );
                 }
             }
 
